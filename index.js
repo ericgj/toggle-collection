@@ -50,23 +50,47 @@ ToggleCollection.prototype.onToggle = function(e){
 ToggleCollection.prototype.toggle = function(model){
   model.toggleState();
   this._emitModel(model);
+  return this;
 }
 
 ToggleCollection.prototype.select = function(model,state){
   i = (state ?  indexof(this.states, state) : 1);  // default == first state after initial
+  if (i<0) throw new RangeError("Unknown state '" + state + "'.");
   model.setState(i);
   this._emitModel(model);
+  return this;
+}
+
+ToggleCollection.prototype.deselect = function(model){
+  model.setState(0);
+  this._emitModel(model);
+  return this;
+}
+
+// call when DOM changes and you want to maintain toggle state
+
+ToggleCollection.prototype.refresh = function(){
+  this.each( function(model){
+    var el = document.querySelector('[data-id="'+model.id+'"');
+    if (el){
+      model.el = el;
+      model.refresh();
+    }
+  });
+  return this;
 }
 
 ToggleCollection.prototype.reset = function(){
   this.models = [];
   this.events = this.events || delegates(this.el, this);
   this.events.unbind();
+  return this;
 }
 
 ToggleCollection.prototype._emitModel = function(model){
-  var state = model.state();
-  if (state){
+  var state = model.state()
+    , i = model.cursor;
+  if (i>0){
     this.emit('select', model, state);
     this.emit(state, model);
   } else {
@@ -95,16 +119,17 @@ Model.prototype.toggleState = function(){
 }
 
 Model.prototype.setState = function(n){
-  n = (n % this.states.length);
-  var elClasses = classes(this.el);
-  for (i=0;i<this.states.length;++i){
-    if (i != n) elClasses.remove(this.states[i]);
-  }
-  elClasses.add(this.states[n]);
-
-  this.cursor = n;
+  this.cursor = (n % this.states.length);
+  this.refresh();
 }
 
+Model.prototype.refresh = function(){
+  var elClasses = classes(this.el);
+  for (i=0;i<this.states.length;++i){
+    if (i != this.cursor) elClasses.remove(this.states[i]);
+  }
+  elClasses.add(this.state);
+}
 
 // private
 
