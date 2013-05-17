@@ -11,7 +11,9 @@
     "component/classes": "*",
     "component/indexof": "*"
   },
-  "development": {},
+  "development": {
+    "component/domify": "*"
+  },
   "license": "MIT",
   "scripts": [
     "index.js"

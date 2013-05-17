@@ -19,7 +19,7 @@ Enumerable(ToggleCollection.prototype);
 ToggleCollection.prototype.__iterate__ = function(){
   var self = this;
   return {
-    length: function() { return self.models.length; }
+    length: function() { return self.models.length; },
     get:    function(i){ return self.models[i]; }
   }
 }
@@ -36,7 +36,7 @@ ToggleCollection.prototype.onToggle = function(e){
     , id = getAttr(el,'data-id');
 
   // should be an indexed search or hash, or use Set
-  var model = this.find(function(model){ model.id == id });
+  var model = this.find(function(m){ return m.id == id; });
 
   if (model) {
     this.toggle(model);
@@ -71,7 +71,7 @@ ToggleCollection.prototype.deselect = function(model){
 
 ToggleCollection.prototype.refresh = function(){
   this.each( function(model){
-    var el = document.querySelector('[data-id="'+model.id+'"');
+    var el = document.querySelector('[data-id="'+model.id+'"]');
     if (el){
       model.el = el;
       model.refresh();
@@ -111,16 +111,17 @@ function Model(el, states){
 }
 
 Model.prototype.state = function(){
-  this.states[this.cursor];
+  return this.states[this.cursor];
 }
 
 Model.prototype.toggleState = function(){
-  this.setState( (this.cursor + 1) % this.states.length )
+  return this.setState( (this.cursor + 1) % this.states.length )
 }
 
 Model.prototype.setState = function(n){
   this.cursor = (n % this.states.length);
   this.refresh();
+  return this;
 }
 
 Model.prototype.refresh = function(){
@@ -128,7 +129,8 @@ Model.prototype.refresh = function(){
   for (i=0;i<this.states.length;++i){
     if (i != this.cursor) elClasses.remove(this.states[i]);
   }
-  elClasses.add(this.state);
+  if (this.state()) elClasses.add(this.state());
+  return this;
 }
 
 // private
@@ -137,7 +139,7 @@ function extendWithData(obj, el){
   var attribs = el.attributes;
   for ( i=0; i<attribs.length; ++i){
     var parts = attribs[i].name.split('-'),
-        first = parts.shift,
+        first = parts.shift(),
         rest = parts.join('-');
     if (first == 'data') obj[rest] = attribs[i].value;
   }
