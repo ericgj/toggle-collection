@@ -9,6 +9,7 @@ module.exports = ToggleCollection;
 function ToggleCollection(el){
   if (!(this instanceof ToggleCollection)) return new ToggleCollection(el);
   this.el = (typeof el == 'string' ? document.querySelector(el) : el);
+  this.target(function(e){ return e;});
   this.reset();
   return this;
 }
@@ -24,15 +25,20 @@ ToggleCollection.prototype.__iterate__ = function(){
   }
 }
 
+ToggleCollection.prototype.target = function(fn){
+  this._target = fn;
+  return this;
+}
+
 ToggleCollection.prototype.toggleOn = function(event,states){
   this.reset();
-  this.events.bind(event, 'onToggle');
   this.states = states;
+  this.events.bind(event, 'onToggle');
   return this;
 }
 
 ToggleCollection.prototype.onToggle = function(e){
-  var el = e.target
+  var el = this._target(e.target)
     , id = getAttr(el,'data-id');
 
   // should be an indexed search or hash, or use Set
@@ -94,7 +100,7 @@ ToggleCollection.prototype._emitModel = function(model){
     this.emit('select', model, state);
     this.emit(state, model);
   } else {
-    this.emit('deselect', model);
+    this.emit('deselect', model, state);
   }
 }
 
