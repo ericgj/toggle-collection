@@ -56,12 +56,16 @@
     <h2>1. Persist state across DOM updates</h2>
     <div class="data" id="example1"></div>
     <button id="randomize">Randomize</button>
-
+    <h2>2. Persist state across page loads </h2>
+    <div class="data" id="example2"></div>
+    <button id="reload">Reload</button>
+    <button id="clear">Clear toggles</button>
     <script src="../build/build.js"></script>
     <script>
       var Togs = require('toggle-collection')
         , domify = require('component-domify')
-        , list = ['One', 'Two', 'Three', 'Four', 'Five']
+      
+      var list = ['One', 'Two', 'Three', 'Four', 'Five']
         
       var t1 = Togs('#example1').toggleOn('click .selectable', [null, 'selected'])
                                 .target( function(e){ return e.parentNode; } );
@@ -70,10 +74,76 @@
         genList( randList(list), document.getElementById('example1') );
         t1.refresh();
       }
-      
+     
+      document.getElementById('reload').onclick = function(){ location.reload(); }
+
+      document.getElementById('clear').onclick = function(){ t2.deselectAll(); store.clear(); }
+
+      var t2 = Togs('#example2').toggleOn('click .selectable', [null, 'selected'])
+                                .target( function(e){ return e.parentNode; } );
+
+
+      function Store(key){
+        this.key = key;
+        if (!(this.get('_index'))) {
+          localStorage.setItem(this._key('_index'), JSON.stringify([]));
+        }
+        return this;
+      }
+      Store.prototype.set = function(model){
+        var exists = !!localStorage.getItem(this._key(model.id));
+        localStorage.setItem(this._key(model.id), model.dump());
+        if (!exists) this._index(model.id);
+        return this;
+      }
+      Store.prototype.get = function(id,fn){
+        fn = fn || function(it){ return it;}
+        return fn( localStorage.getItem(this._key(id)) );
+      }
+      Store.prototype.getAll = function(fn){
+        var ids = this.indexes();
+        var ret = [];
+        for (i=0;i<ids.length;++i){
+          var id = ids[i];
+          ret.push( this.get(id,fn) );
+        }
+        return ret;
+      }
+
+      Store.prototype.clear = function(){
+        var ids = this.indexes()
+        for (i=0;i<ids.length;++i){
+          var id = ids[i];
+          localStorage.removeItem(this._key(id));
+        }
+        localStorage.setItem(this._key('_index'), JSON.stringify([]));
+      }
+
+      Store.prototype.indexes = function(){
+        return this.get('_index', JSON.parse)
+      }
+
+      Store.prototype.count = function(){
+        return this.indexes().length;
+      }
+      Store.prototype._key = function(id){
+        return [this.key,id].join('::');
+      }
+      Store.prototype._index = function(id){
+        var ids = this.indexes();
+        ids.push(id);
+        localStorage.setItem(this._key('_index'), JSON.stringify(ids));
+      }
+
+
       t1.on('select', function(mod,st){ logToggleEvent('t1','select',mod,st); });
       t1.on('deselect', function(mod,st){ logToggleEvent('t1','deselect',mod,st); });
       t1.on('selected', function(mod){ logToggleEvent('t1','selected',mod); });
+
+      t2.on('select', function(mod,st){ logToggleEvent('t2','select',mod,st); });
+      t2.on('deselect', function(mod,st){ logToggleEvent('t2','deselect',mod,st); });
+      t2.on('selected', function(mod){ logToggleEvent('t2','selected',mod); });
+
 
 
       function logToggleEvent(ctrl,ev,mod,st){
@@ -121,7 +191,16 @@
       };
       
       genList(list, document.getElementById('example1'));
-      
+      genList(list, document.getElementById('example2'));
+
+
+      var store = new Store('t2-state');
+      if (store.count() > 0){
+        t2.models = store.getAll(Togs.model.load);
+        t2.refresh();
+      }
+      t2.on('change', store.set.bind(store));
+     
     </script>
   </body>
 </html>

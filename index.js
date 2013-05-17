@@ -10,9 +10,12 @@ function ToggleCollection(el){
   if (!(this instanceof ToggleCollection)) return new ToggleCollection(el);
   this.el = (typeof el == 'string' ? document.querySelector(el) : el);
   this.target(function(e){ return e;});
+  this.models = [];
   this.reset();
   return this;
 }
+
+ToggleCollection.model = Model;
 
 Emitter(ToggleCollection.prototype);
 Enumerable(ToggleCollection.prototype);
@@ -73,11 +76,20 @@ ToggleCollection.prototype.deselect = function(model){
   return this;
 }
 
+ToggleCollection.prototype.selectAll = function(){
+  this.each( this.select.bind(this) );
+}
+
+ToggleCollection.prototype.deselectAll = function(){
+  this.each( this.deselect.bind(this) );
+}
+
 // call when DOM changes and you want to maintain toggle state
 
 ToggleCollection.prototype.refresh = function(){
+  var parentEl = this.el;
   this.each( function(model){
-    var el = document.querySelector('[data-id="'+model.id+'"]');
+    var el = parentEl.querySelector('[data-id="'+model.id+'"]');
     if (el){
       model.el = el;
       model.refresh();
@@ -86,7 +98,11 @@ ToggleCollection.prototype.refresh = function(){
   return this;
 }
 
+// note this completely unbinds events (until the next toggleOn)
+// more typically you'd simply call deselectAll()
+
 ToggleCollection.prototype.reset = function(){
+  this.deselectAll();
   this.models = [];
   this.events = this.events || delegates(this.el, this);
   this.events.unbind();
@@ -96,6 +112,7 @@ ToggleCollection.prototype.reset = function(){
 ToggleCollection.prototype._emitModel = function(model){
   var state = model.state()
     , i = model.cursor;
+  this.emit('change',model);
   if (i>0){
     this.emit('select', model, state);
     this.emit(state, model);
@@ -108,10 +125,9 @@ ToggleCollection.prototype._emitModel = function(model){
 
 function Model(el, states){
   this.el = el;
-  this.data = {}
-  extendWithData(this.data, el);
+  this.data = (el ? extractData(el) : {})
   this.id = this.data.id;
-  this.states = states;
+  this.states = states || [];
   this.cursor = 0;
   return this;
 }
@@ -139,16 +155,38 @@ Model.prototype.refresh = function(){
   return this;
 }
 
+Model.prototype.dump = function(){
+  return JSON.stringify({
+    id: this.id,
+    states: this.states,
+    cursor: this.cursor,
+    data: this.data
+  })
+}
+
+Model.load = function(str){
+  var obj = JSON.parse(str);
+  var model = new Model();
+  model.id = obj.id;
+  model.states = obj.states;
+  model.cursor = obj.cursor;
+  model.data = obj.data;
+  return model;
+}
+
+
 // private
 
-function extendWithData(obj, el){
-  var attribs = el.attributes;
+function extractData(el){
+  var attribs = el.attributes
+    , obj  = {}
   for ( i=0; i<attribs.length; ++i){
     var parts = attribs[i].name.split('-'),
         first = parts.shift(),
         rest = parts.join('-');
     if (first == 'data') obj[rest] = attribs[i].value;
   }
+  return obj;
 }
 
 
