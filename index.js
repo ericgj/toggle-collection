@@ -164,6 +164,7 @@ Model.prototype.setState = function(n){
 }
 
 Model.prototype.refresh = function(){
+  if (!this.el) return this;
   var elClasses = classes(this.el);
   for (i=0;i<this.states.length;++i){
     if (i != this.cursor) elClasses.remove(this.states[i]);
