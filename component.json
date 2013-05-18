@@ -12,7 +12,8 @@
     "component/indexof": "*"
   },
   "development": {
-    "component/domify": "*"
+    "component/domify": "*",
+    "marcuswestin/store.js": "*"
   },
   "license": "MIT",
   "scripts": [

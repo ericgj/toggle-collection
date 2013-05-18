@@ -64,93 +64,92 @@
     <script>
       var Togs = require('toggle-collection')
         , domify = require('component-domify')
+        , storage = require('marcuswestin-store.js')
       
       var list = ['One', 'Two', 'Three', 'Four', 'Five']
-        
-      var t1 = Togs('#example1').toggleOn('click .selectable', [null, 'selected'])
-                                .target( function(e){ return e.parentNode; } );
       
-      document.getElementById('randomize').onclick = function(){
-        genList( randList(list), document.getElementById('example1') );
-        t1.refresh();
-      }
-     
-      document.getElementById('reload').onclick = function(){ location.reload(); }
+      window.onload = function(){
 
-      document.getElementById('clear').onclick = function(){ t2.deselectAll(); store.clear(); }
+        /* example 1 */
 
-      var t2 = Togs('#example2').toggleOn('click .selectable', [null, 'selected'])
-                                .target( function(e){ return e.parentNode; } );
-
-
-      function Store(key){
-        this.key = key;
-        if (!(this.get('_index'))) {
-          localStorage.setItem(this._key('_index'), JSON.stringify([]));
+        var t1 = Togs('#example1').toggleOn('click .selectable', [null, 'selected'])
+                                  .target( function(e){ return e.parentNode; } );
+      
+        document.getElementById('randomize').onclick = function(){
+          genList( randList(list), document.getElementById('example1') );
+          t1.refresh();
         }
-        return this;
-      }
-      Store.prototype.set = function(model){
-        var exists = !!localStorage.getItem(this._key(model.id));
-        localStorage.setItem(this._key(model.id), model.dump());
-        if (!exists) this._index(model.id);
-        return this;
-      }
-      Store.prototype.get = function(id,fn){
-        fn = fn || function(it){ return it;}
-        return fn( localStorage.getItem(this._key(id)) );
-      }
-      Store.prototype.getAll = function(fn){
-        var ids = this.indexes();
-        var ret = [];
-        for (i=0;i<ids.length;++i){
-          var id = ids[i];
-          ret.push( this.get(id,fn) );
-        }
-        return ret;
-      }
 
-      Store.prototype.clear = function(){
-        var ids = this.indexes()
-        for (i=0;i<ids.length;++i){
-          var id = ids[i];
-          localStorage.removeItem(this._key(id));
-        }
-        localStorage.setItem(this._key('_index'), JSON.stringify([]));
-      }
+        /* example 2 */
 
-      Store.prototype.indexes = function(){
-        return this.get('_index', JSON.parse)
-      }
+        var store = new Store('t2-example');
+        var t2 = Togs('#example2').toggleOn('click .selectable', [null, 'selected'])
+                                  .target( function(e){ return e.parentNode; } )
 
-      Store.prototype.count = function(){
-        return this.indexes().length;
-      }
-      Store.prototype._key = function(id){
-        return [this.key,id].join('::');
-      }
-      Store.prototype._index = function(id){
-        var ids = this.indexes();
-        ids.push(id);
-        localStorage.setItem(this._key('_index'), JSON.stringify(ids));
-      }
+        document.getElementById('reload').onclick = function(){ location.reload(); }
+        document.getElementById('clear').onclick = function(){ t2.deselectAll(); store.clear(); }
 
 
-      t1.on('select', function(mod,st){ logToggleEvent('t1','select',mod,st); });
-      t1.on('deselect', function(mod,st){ logToggleEvent('t1','deselect',mod,st); });
-      t1.on('selected', function(mod){ logToggleEvent('t1','selected',mod); });
+        /* console logging */
 
-      t2.on('select', function(mod,st){ logToggleEvent('t2','select',mod,st); });
-      t2.on('deselect', function(mod,st){ logToggleEvent('t2','deselect',mod,st); });
-      t2.on('selected', function(mod){ logToggleEvent('t2','selected',mod); });
+        t1.on('select', function(mod,st){ logToggleEvent('t1','select',mod,st); });
+        t1.on('deselect', function(mod,st){ logToggleEvent('t1','deselect',mod,st); });
+        t1.on('selected', function(mod){ logToggleEvent('t1','selected',mod); });
 
+        t2.on('select', function(mod,st){ logToggleEvent('t2','select',mod,st); });
+        t2.on('deselect', function(mod,st){ logToggleEvent('t2','deselect',mod,st); });
+        t2.on('selected', function(mod){ logToggleEvent('t2','selected',mod); });
 
+        
+        /* initialize lists */
+
+        genList(list, document.getElementById('example1'));
+        genList(list, document.getElementById('example2'));
+
+        t2.store(store);
+      }
 
       function logToggleEvent(ctrl,ev,mod,st){
         console.log('%s emitted %s: %s',
                      ctrl, ev, mod.id + (st ? ', ' + st : '')
                    );
       }
+
+      function Store(namespace){
+        this.namespace = namespace;
+        this._storage = storage;
+        return this;
+      }
+      Store.prototype._ns = function(key){ return [this.namespace,key].join('::')}
+      Store.prototype.get = function(key){ 
+        return this._storage.get(this._ns(key))
+      }
+      Store.prototype.set = function(key,value){ 
+        var keys = this.get('_keys') || [];
+        keys.push(key);
+        try {
+          var ret = this._storage.set(this._ns(key),value);
+        } finally {
+          this._storage.set(this._ns('_keys'),keys);
+          return ret;
+        }
+      }
+      Store.prototype.remove = function(key){
+        return this._storage.remove(this._ns(key));
+      }
+      Store.prototype.clear = function(){ return this._storage.clear(); }
+      Store.prototype.transact = function(key,defaultVal,fn){
+        return this._storage.transact(this._ns(key),defaultVal,fn)
+      }
+      Store.prototype.getAll = function(){
+        var keys = this.get('_keys') || [];
+        var ret = {}
+        for (i=0;i<keys.length;++i){
+          ret[keys[i]] = this.get(keys[i]);
+        }
+        return ret;
+      }
+
 
       function randList(input) {
         var perms = permute(input)
@@ -190,17 +189,9 @@
           return main(input);
       };
       
-      genList(list, document.getElementById('example1'));
-      genList(list, document.getElementById('example2'));
 
 
-      var store = new Store('t2-state');
-      if (store.count() > 0){
-        t2.models = store.getAll(Togs.model.load);
-        t2.refresh();
-      }
-      t2.on('change', store.set.bind(store));
-     
+    
     </script>
   </body>
 </html>

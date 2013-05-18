@@ -33,6 +33,22 @@ ToggleCollection.prototype.target = function(fn){
   return this;
 }
 
+ToggleCollection.prototype.store = function(store){
+  var models = valuesOf(store.getAll());
+  if (models.length > 0){
+    this.deselectAll();
+    this.models = [];
+    for (i=0;i<models.length;++i){
+      this.models.push(Model.load(models[i]));
+    }
+    this.refresh();
+  }
+  this.off('change', this._store);
+  this._store = function(model){ store.set(model.id, model); };
+  this.on('change', this._store); 
+  return this;
+}
+
 ToggleCollection.prototype.toggleOn = function(event,states){
   this.reset();
   this.states = states;
@@ -54,6 +70,7 @@ ToggleCollection.prototype.onToggle = function(e){
     this.models.push(model);
     this.toggle(model);
   }
+  return this;
 }
 
 ToggleCollection.prototype.toggle = function(model){
@@ -155,17 +172,16 @@ Model.prototype.refresh = function(){
   return this;
 }
 
-Model.prototype.dump = function(){
-  return JSON.stringify({
+Model.prototype.toJSON = function(){
+  return {
     id: this.id,
     states: this.states,
     cursor: this.cursor,
     data: this.data
-  })
+  }
 }
 
-Model.load = function(str){
-  var obj = JSON.parse(str);
+Model.load = function(obj){
   var model = new Model();
   model.id = obj.id;
   model.states = obj.states;
@@ -189,6 +205,18 @@ function extractData(el){
   return obj;
 }
 
+
+//  Note: inlined from component/object
+
+var has = Object.prototype.hasOwnProperty;
+
+var valuesOf = Object.values || function(obj){
+  var vals = [];
+  for (var key in obj){
+    if (has.call(obj,key)) vals.push(obj[key])
+  }
+  return vals;
+}
 
 //  Note: inlined from javve/get-attribute
 
