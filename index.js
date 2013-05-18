@@ -28,6 +28,16 @@ ToggleCollection.prototype.__iterate__ = function(){
   }
 }
 
+ToggleCollection.prototype.ids = function(){
+  return this.map('id').obj;
+}
+
+ToggleCollection.prototype.selectedIds = function(state){
+  i = (state ?  indexof(this.states, state) : 1);  // default == first state after initial
+  if (i<0) throw new RangeError("Unknown state '" + state + "'.");
+  return this.select('cursor == '+i).map('id').obj;
+}
+
 ToggleCollection.prototype.target = function(fn){
   this._target = fn;
   return this;
@@ -36,7 +46,7 @@ ToggleCollection.prototype.target = function(fn){
 ToggleCollection.prototype.store = function(store){
   var models = valuesOf(store.getAll());
   if (models.length > 0){
-    this.deselectAll();
+    this.toggleDeselectAll();
     this.models = [];
     for (i=0;i<models.length;++i){
       this.models.push(Model.load(models[i]));
@@ -79,7 +89,7 @@ ToggleCollection.prototype.toggle = function(model){
   return this;
 }
 
-ToggleCollection.prototype.select = function(model,state){
+ToggleCollection.prototype.toggleSelect = function(model,state){
   i = (state ?  indexof(this.states, state) : 1);  // default == first state after initial
   if (i<0) throw new RangeError("Unknown state '" + state + "'.");
   model.setState(i);
@@ -87,18 +97,18 @@ ToggleCollection.prototype.select = function(model,state){
   return this;
 }
 
-ToggleCollection.prototype.deselect = function(model){
+ToggleCollection.prototype.toggleDeselect = function(model){
   model.setState(0);
   this._emitModel(model);
   return this;
 }
 
-ToggleCollection.prototype.selectAll = function(){
-  this.each( this.select.bind(this) );
+ToggleCollection.prototype.toggleSelectAll = function(){
+  this.each( this.toggleSelect.bind(this) );
 }
 
-ToggleCollection.prototype.deselectAll = function(){
-  this.each( this.deselect.bind(this) );
+ToggleCollection.prototype.toggleDeselectAll = function(){
+  this.each( this.toggleDeselect.bind(this) );
 }
 
 // call when DOM changes and you want to maintain toggle state
@@ -116,10 +126,10 @@ ToggleCollection.prototype.refresh = function(){
 }
 
 // note this completely unbinds events (until the next toggleOn)
-// more typically you'd simply call deselectAll()
+// more typically you'd simply call toggleDeselectAll()
 
 ToggleCollection.prototype.reset = function(){
-  this.deselectAll();
+  this.toggleDeselectAll();
   this.models = [];
   this.events = this.events || delegates(this.el, this);
   this.events.unbind();

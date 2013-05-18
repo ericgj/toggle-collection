@@ -56,10 +56,13 @@
     <h2>1. Persist state across DOM updates</h2>
     <div class="data" id="example1"></div>
     <button id="randomize">Randomize</button>
+    <button id="log-selected">Log selected IDs</button>
+
     <h2>2. Persist state across page loads </h2>
     <div class="data" id="example2"></div>
     <button id="reload">Reload</button>
     <button id="clear">Clear toggles</button>
+
     <script src="../build/build.js"></script>
     <script>
       var Togs = require('toggle-collection')
@@ -79,6 +82,9 @@
           genList( randList(list), document.getElementById('example1') );
           t1.refresh();
         }
+        document.getElementById('log-selected').onclick = function(){
+          console.log('t1 selectedIds: %s', t1.selectedIds().join(', '));
+        }
 
         /* example 2 */
 
@@ -87,7 +93,7 @@
                                   .target( function(e){ return e.parentNode; } )
 
         document.getElementById('reload').onclick = function(){ location.reload(); }
-        document.getElementById('clear').onclick = function(){ t2.deselectAll(); store.clear(); }
+        document.getElementById('clear').onclick = function(){ t2.toggleDeselectAll(); store.clear(); }
 
 
         /* console logging */
