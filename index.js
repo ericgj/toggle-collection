@@ -48,7 +48,7 @@ ToggleCollection.prototype.store = function(store){
   if (models.length > 0){
     this.toggleDeselectAll();
     this.models = [];
-    for (i=0;i<models.length;++i){
+    for (var i=0;i<models.length;++i){
       this.models.push(Model.load(models[i]));
     }
     this.refresh();
@@ -62,24 +62,14 @@ ToggleCollection.prototype.store = function(store){
 ToggleCollection.prototype.toggleOn = function(event,states){
   this.reset();
   this.states = states;
+  this.modelSelector = event.split(' ').splice(1).join(' ');
   this.events.bind(event, 'onToggle');
   return this;
 }
 
 ToggleCollection.prototype.onToggle = function(e){
   var el = this._target(e.target)
-    , id = getAttr(el,'data-id');
-
-  // should be an indexed search or hash, or use Set
-  var model = this.find(function(m){ return m.id == id; });
-
-  if (model) {
-    this.toggle(model);
-  } else {
-    model = new Model(el, this.states);
-    this.models.push(model);
-    this.toggle(model);
-  }
+  this._setModel(el);
   return this;
 }
 
@@ -103,12 +93,23 @@ ToggleCollection.prototype.toggleDeselect = function(model){
   return this;
 }
 
-ToggleCollection.prototype.toggleSelectAll = function(){
-  this.each( this.toggleSelect.bind(this) );
+ToggleCollection.prototype.toggleAll = function(){
+  if (!this.states) return this;
+  this._setAllModels();
+  return this;
 }
+
+ToggleCollection.prototype.toggleSelectAll = function(state){
+  if (!this.states) return this;
+  this._setAllModels(state || this.states[1]);
+  return this;
+}
+
+// Note does not need to _setAllModels, only the ones that have been selected
 
 ToggleCollection.prototype.toggleDeselectAll = function(){
   this.each( this.toggleDeselect.bind(this) );
+  return this;
 }
 
 // call when DOM changes and you want to maintain toggle state
@@ -136,6 +137,29 @@ ToggleCollection.prototype.reset = function(){
   return this;
 }
 
+ToggleCollection.prototype._setModel = function(el,state){
+  var id = getAttr(el,'data-id');
+
+  // should be an indexed search or hash, or use Set
+  var model = this.find(function(m){ return m.id == id; });
+
+  if (!model) {
+    model = new Model(el, this.states);
+    this.models.push(model);
+  }
+  state ? this.toggleSelect(model,state) 
+        : this.toggle(model)
+  ;
+}
+
+ToggleCollection.prototype._setAllModels = function(state){
+  if (!this.modelSelector) return;
+  var els = this.el.querySelectorAll(this.modelSelector);
+  for (var i=0;i<els.length;++i){
+    this._setModel(this._target(els[i]),state);
+  }
+}
+
 ToggleCollection.prototype._emitModel = function(model){
   var state = model.state()
     , i = model.cursor;
@@ -149,6 +173,7 @@ ToggleCollection.prototype._emitModel = function(model){
 }
 
 
+// private
 
 function Model(el, states){
   this.el = el;
@@ -184,7 +209,7 @@ Model.prototype.setState = function(n){
 Model.prototype.refresh = function(){
   if (!this.el) return this;
   var elClasses = classes(this.el);
-  for (i=0;i<this.states.length;++i){
+  for (var i=0;i<this.states.length;++i){
     if (i != this.cursor) elClasses.remove(this.states[i]);
   }
   if (this.state()) elClasses.add(this.state());
@@ -210,12 +235,10 @@ Model.load = function(obj){
 }
 
 
-// private
-
 function extractData(el){
   var attribs = el.attributes
     , obj  = {}
-  for ( i=0; i<attribs.length; ++i){
+  for ( var i=0; i<attribs.length; ++i){
     var parts = attribs[i].name.split('-'),
         first = parts.shift(),
         rest = parts.join('-');
@@ -223,7 +246,6 @@ function extractData(el){
   }
   return obj;
 }
-
 
 //  Note: inlined from component/object
 
