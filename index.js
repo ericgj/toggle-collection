@@ -163,6 +163,14 @@ Model.prototype.state = function(){
   return this.states[this.cursor];
 }
 
+Model.prototype.deselected = function(){
+  return this.cursor == 0;
+}
+
+Model.prototype.selected = function(){
+  return this.cursor > 0;
+}
+
 Model.prototype.toggleState = function(){
   return this.setState( (this.cursor + 1) % this.states.length )
 }

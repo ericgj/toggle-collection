@@ -130,7 +130,7 @@
       /* example 3 */
       var t3 = Togs('#example3').toggleOn('click .selectable', [null, 'asc', 'desc'])
       t3.on('select', function(model){
-        t3.each( function(m){ if (!(model.id == m.id)) t3.toggleDeselect(m); });
+        t3.select('selected()').each( function(m){ if (model.id != m.id) t3.toggleDeselect(m); });
       })
 
       /* console logging */
