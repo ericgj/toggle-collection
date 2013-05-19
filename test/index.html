@@ -85,6 +85,8 @@
     <h2>1. Persist state across DOM updates</h2>
     <div class="data" id="example1"></div>
     <button id="randomize">Randomize</button>
+    <button id="select-all">Select all</button>
+    <button id="deselect-all">Deselect all</button>
     <button id="log-selected">Log selected IDs</button>
 
     <h2>2. Persist state across page loads </h2>
@@ -112,6 +114,12 @@
       document.getElementById('randomize').onclick = function(){
         genList( randList(list), document.getElementById('example1') );
         t1.refresh();
+      }
+      document.getElementById('select-all').onclick = function(){ 
+        t1.toggleSelectAll(); 
+      }
+      document.getElementById('deselect-all').onclick = function(){ 
+        t1.toggleDeselectAll(); 
       }
       document.getElementById('log-selected').onclick = function(){
         console.log('t1 selectedIds: %s', t1.selectedIds().join(', '));
