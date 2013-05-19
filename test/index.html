@@ -71,42 +71,42 @@
       
       var list = ['One', 'Two', 'Three', 'Four', 'Five']
       
+
+      /* example 1 */
+
+      var t1 = Togs('#example1').toggleOn('click .selectable', [null, 'selected'])
+                                .target( function(e){ return e.parentNode; } );
+    
+      document.getElementById('randomize').onclick = function(){
+        genList( randList(list), document.getElementById('example1') );
+        t1.refresh();
+      }
+      document.getElementById('log-selected').onclick = function(){
+        console.log('t1 selectedIds: %s', t1.selectedIds().join(', '));
+      }
+
+      /* example 2 */
+
+      var store = new Store('t2-example');
+      var t2 = Togs('#example2').toggleOn('click .selectable', [null, 'selected'])
+                                .target( function(e){ return e.parentNode; } )
+
+      document.getElementById('reload').onclick = function(){ location.reload(); }
+      document.getElementById('clear').onclick = function(){ t2.toggleDeselectAll(); store.clear(); }
+
+
+      /* console logging */
+
+      t1.on('select', function(mod,st){ logToggleEvent('t1','select',mod,st); });
+      t1.on('deselect', function(mod,st){ logToggleEvent('t1','deselect',mod,st); });
+      t1.on('selected', function(mod){ logToggleEvent('t1','selected',mod); });
+
+      t2.on('select', function(mod,st){ logToggleEvent('t2','select',mod,st); });
+      t2.on('deselect', function(mod,st){ logToggleEvent('t2','deselect',mod,st); });
+      t2.on('selected', function(mod){ logToggleEvent('t2','selected',mod); });
+        
       window.onload = function(){
 
-        /* example 1 */
-
-        var t1 = Togs('#example1').toggleOn('click .selectable', [null, 'selected'])
-                                  .target( function(e){ return e.parentNode; } );
-      
-        document.getElementById('randomize').onclick = function(){
-          genList( randList(list), document.getElementById('example1') );
-          t1.refresh();
-        }
-        document.getElementById('log-selected').onclick = function(){
-          console.log('t1 selectedIds: %s', t1.selectedIds().join(', '));
-        }
-
-        /* example 2 */
-
-        var store = new Store('t2-example');
-        var t2 = Togs('#example2').toggleOn('click .selectable', [null, 'selected'])
-                                  .target( function(e){ return e.parentNode; } )
-
-        document.getElementById('reload').onclick = function(){ location.reload(); }
-        document.getElementById('clear').onclick = function(){ t2.toggleDeselectAll(); store.clear(); }
-
-
-        /* console logging */
-
-        t1.on('select', function(mod,st){ logToggleEvent('t1','select',mod,st); });
-        t1.on('deselect', function(mod,st){ logToggleEvent('t1','deselect',mod,st); });
-        t1.on('selected', function(mod){ logToggleEvent('t1','selected',mod); });
-
-        t2.on('select', function(mod,st){ logToggleEvent('t2','select',mod,st); });
-        t2.on('deselect', function(mod,st){ logToggleEvent('t2','deselect',mod,st); });
-        t2.on('selected', function(mod){ logToggleEvent('t2','selected',mod); });
-
-        
         /* initialize lists */
 
         genList(list, document.getElementById('example1'));
@@ -114,6 +114,7 @@
 
         t2.store(store);
       }
+
 
       function logToggleEvent(ctrl,ev,mod,st){
         console.log('%s emitted %s: %s',
