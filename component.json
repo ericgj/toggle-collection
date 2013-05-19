@@ -2,7 +2,7 @@
   "name": "toggle-collection",
   "repo": "ericgj/toggle-collection",
   "description": "Generic controller for multiple toggle elements",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "keywords": [],
   "dependencies": {
     "component/emitter": "*",
